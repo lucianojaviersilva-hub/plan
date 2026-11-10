@@ -255,7 +255,8 @@ dialog#cfg{padding-bottom:0}
     <div class="expw">
     <div>
     <div class="f"><label for="eVista">Qué exportar</label><select id="eVista"><option value="semana">Producción por sector</option><option value="inst">Instalaciones</option><option value="persona">Por persona</option></select></div>
-    <div class="f" id="eGalW"><label for="eGal">Qué sectores</label><select id="eGal"><option value="cur">Lo que estoy viendo ahora</option><option value="all">Todos los sectores</option><option value="1">Solo galpón 1</option><option value="2">Solo galpón 2</option><option value="12">Galpón 1 y galpón 2, cada uno en su hoja</option></select></div>
+    <div class="f" id="eGalW"><label for="eGal">Qué sectores</label><select id="eGal"><option value="cur">Lo que estoy viendo ahora</option><option value="all">Todos los sectores</option><option value="1">Solo galpón 1</option><option value="2">Solo galpón 2</option><option value="12">Galpón 1 y galpón 2, cada uno en su hoja</option><option value="each-s">Cada sector en su hoja</option><optgroup label="Un solo sector" id="eGalS"></optgroup></select></div>
+    <div class="f" id="ePerW"><label for="ePer">Qué personas</label><select id="ePer"><option value="">Todas en una misma tabla</option><option value="each">Cada persona por separado, para recortar</option><optgroup label="Una sola persona" id="ePerS"></optgroup></select></div>
     <div class="two">
       <div class="f"><label for="eDesde">Desde</label><input id="eDesde" type="date"></div>
       <div class="f"><label for="eHasta">Hasta</label><input id="eHasta" type="date"></div>
@@ -386,6 +387,7 @@ function rowsPersona(days){
   S.tareas.forEach(function(t){if(days.some(function(d){return on(d,t)}))list=list.concat(nombres(t.quien))});
   var rows=uniq(list).map(function(n){var k=norm(n);return{label:n,persona:true,pred:function(t){return!(XOPT&&!XOPT.inst&&t.tipo==="inst")&&nombres(t.quien).some(function(x){return norm(x)===k})}}});
   if(S.tareas.some(function(t){return!nombres(t.quien).length&&days.some(function(d){return on(d,t)})}))rows.push({label:"Sin asignar",sub:"falta responsable",pred:function(t){return!nombres(t.quien).length}});
+  if(XOPT&&XOPT.persona){var kp=norm(XOPT.persona);rows=rows.filter(function(r){return norm(r.label)===kp})}
   return rows;
 }
 function renderSemana(persona){
@@ -653,7 +655,7 @@ $("bExp").addEventListener("click",function(){
   var a,b;if(S.view==="inst"){var w=semanas4();a=w[0][0];b=w[3][w[3].length-1]}else{var d=dias5();a=d[0];b=d[d.length-1]}
   $("eVista").value=S.view==="dia"?"semana":S.view;$("eDesde").value=iso(a);$("eHasta").value=iso(b);$("eErr").textContent="";
   var f=$("filtro");$("eNota").textContent=S.cli?"Se exporta solo el cliente filtrado: "+f.options[f.selectedIndex].text+".":"Se exportan todos los clientes. Para exportar uno solo, elegilo antes en el filtro de clientes.";
-  $("eXlsx").hidden=!window.XLSX;$("ePdf").hidden=!(window.jspdf&&window.jspdf.jsPDF);$("eGal").value="cur";$("eImp").hidden=$("ePdf").hidden;
+  $("eXlsx").hidden=!window.XLSX;$("ePdf").hidden=!(window.jspdf&&window.jspdf.jsPDF);$("eGal").value="cur";$("ePer").value="";listasExp();$("eImp").hidden=$("ePdf").hidden;
   var pe=prefsExp();$("eOri").value=oriDef($("eVista").value);$("eInst").checked=pe.inst!==false;$("eVac").checked=!!pe.vac;visOpts();
   $("exp").showModal();previa();
 });
@@ -668,22 +670,33 @@ function prep(){
   return{v:v,bl:bl,title:"SILMAD - "+nom+" del "+dmy(a)+" al "+dmy(b)+(S.cli?" - "+f.options[f.selectedIndex].text:""),file:slug(nom)+"-"+a+"-a-"+b+(S.cli?"-"+slug(S.cli):"")};
 }
 function save(name,data){$("exp").close();try{var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data]));a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.parentNode.removeChild(a)},3000);toast("Archivo descargado")}catch(e){toast("No se pudo exportar desde este dispositivo.")}}
-function expOpts(){var v=$("eVista").value;return{v:v,ori:$("eOri").value,inst:$("eInst").checked,vac:$("eVac").checked,sel:v==="inst"?"cur":$("eGal").value}}
-function galsDe(sel){return sel==="all"?[""]:sel==="1"?["1"]:sel==="2"?["2"]:sel==="12"?["1","2"]:[S.gal]}
+function expOpts(){var v=$("eVista").value;return{v:v,ori:$("eOri").value,inst:$("eInst").checked,vac:$("eVac").checked,sel:v==="inst"?"cur":$("eGal").value,per:v==="persona"?$("ePer").value:""}}
+function galsDe(sel){return sel==="all"?[""]:sel==="1"?["1"]:sel==="2"?["2"]:sel==="12"?["1","2"]:sel==="each-s"?sectores().map(function(x){return"s:"+x.id}):sel.indexOf("s:")===0?[sel]:[S.gal]}
+/* personas a imprimir: null = todas juntas; "each" = las que tienen tareas en el período (con el filtro de galpón/sector vigente) */
+function persDe(o,a,b){if(o.v!=="persona"||!o.per)return[null];if(o.per!=="each")return[o.per];var ks=habiles(a,b).map(iso),px=XOPT;XOPT={inst:o.inst,vac:true};try{return rowsPersona(ks).filter(function(r){return r.label!=="Sin asignar"&&S.tareas.some(function(t){return r.pred(t)&&pasa(t)&&ks.some(function(k){return on(k,t)})})}).map(function(r){return r.label})}finally{XOPT=px}}
+function tieneTareas(tabs){return tabs.some(function(T){return T.rows.some(function(r){return r.items&&r.items.length})})}
 function alcance(v,gv){return v==="inst"||!gv?"":gv.indexOf("s:")===0?" - "+(gv==="s:inst"?"Instalación":secNombre(gv.slice(2))):" - Galpón "+gv}
 function conOpts(o,fn){var prev=S.gal,px=XOPT;XOPT=o;try{return fn()}finally{S.gal=prev;XOPT=px}}
 function prefsExp(){try{return JSON.parse(localStorage.getItem("pl-exp")||"{}")||{}}catch(e){return{}}}
 function guardarPrefsExp(o){var p=prefsExp();p.ori=p.ori||{};p.ori[o.v]=o.ori;if(o.v!=="inst"){p.inst=o.inst;p.vac=o.vac}try{localStorage.setItem("pl-exp",JSON.stringify(p))}catch(e){}}
 function oriDef(v){var p=prefsExp();return p.ori&&p.ori[v]||(v==="inst"?"h":"v")}
-function visOpts(){var i=$("eVista").value==="inst";$("eGalW").hidden=i;$("eInstW").hidden=i;$("eVacW").hidden=i}
+function visOpts(){var v=$("eVista").value,i=v==="inst";$("eGalW").hidden=i;$("eInstW").hidden=i;$("eVacW").hidden=i;$("ePerW").hidden=v!=="persona"}
+function listasExp(){var gs=$("eGal").value,ps=$("ePer").value;
+  $("eGalS").innerHTML=sectores().map(function(x){return'<option value="s:'+esc(x.id)+'">'+esc(x.nombre)+'</option>'}).join("");
+  $("ePerS").innerHTML=PL.slice().sort(function(a,b){return a.localeCompare(b,"es")}).map(function(n){return'<option value="'+esc(n)+'">'+esc(n)+'</option>'}).join("");
+  $("eGal").value=gs||"cur";if(!$("eGal").value)$("eGal").value="cur";$("ePer").value=ps;if($("ePer").value!==ps)$("ePer").value=""}
 function dims(o){return o.ori==="h"?[297,210]:[210,297]}
 function nuevoPdf(o){return new window.jspdf.jsPDF({orientation:o.ori==="h"?"landscape":"portrait",unit:"mm",format:"a4"})}
 function generar(doc,o,a,b){
   var d=dims(o),f=$("filtro"),nom={semana:"Producción",inst:"Instalaciones",persona:"Por persona"}[o.v],n=0;
-  conOpts(o,function(){galsDe(o.sel).forEach(function(gv){S.gal=gv;
-    pdfDibujar(doc,pdfTablas(o.v,a,b),"SILMAD - "+nom+alcance(o.v,gv)+" - del "+dmy(a)+" al "+dmy(b)+(S.cli?" - "+f.options[f.selectedIndex].text:""),n>0,d[0],d[1]);n++})});
+  var varias=o.sel==="each-s"||o.per==="each",yy=0;
+  conOpts(o,function(){galsDe(o.sel).forEach(function(gv){S.gal=gv;persDe(o,a,b).forEach(function(pn){XOPT.persona=pn;
+    var tabs=pdfTablas(o.v,a,b);if(varias&&!tieneTareas(tabs))return;
+    yy=pdfDibujar(doc,tabs,"SILMAD - "+(pn?"Tareas de "+pn.toUpperCase():nom+alcance(o.v,gv))+" - del "+dmy(a)+" al "+dmy(b)+(S.cli?" - "+f.options[f.selectedIndex].text:""),n>0,d[0],d[1],o.per==="each"&&n>0?yy:0);n++})});XOPT.persona=null});
+  if(!n)pdfDibujar(doc,[{modo:"prod",cols:["Sin tareas en ese período"],rows:[]}],"SILMAD - "+nom+" - del "+dmy(a)+" al "+dmy(b),false,d[0],d[1]);
+  return n;
 }
-function nombreArch(x,o){return x.file+(o.sel==="cur"||o.v==="inst"?"":"-galpon-"+o.sel)}
+function nombreArch(x,o){var sel=o.sel.indexOf("s:")===0?o.sel.slice(2):o.sel==="each-s"?"por-sector":o.sel==="12"?"galpon-1-y-2":o.sel==="all"?"":"galpon-"+o.sel;return x.file+(o.v==="inst"||o.sel==="cur"||!sel?"":"-"+sel)+(o.per?"-"+(o.per==="each"?"por-persona":slug(o.per)):"")}
 /* Vista previa: dibuja lo mismo que el PDF sobre <canvas>; mide el texto con jsPDF para que corte las líneas igual. */
 function Lienzo(W,H,cont,ref){this.W=W;this.H=H;this.cont=cont;this.ref=ref;this.K=3*Math.min(2,window.devicePixelRatio||1);this.n=0;this.st={f:"normal",sz:10,tc:0,dc:0,fc:0,lw:.2,dash:[]};this.addPage()}
 Lienzo.prototype={
@@ -710,14 +723,18 @@ function previa(){
   catch(e){box.textContent="No se pudo armar la vista previa."}
 }
 var tPrev=0;function pedirPrevia(){clearTimeout(tPrev);tPrev=setTimeout(previa,150)}
-["eGal","eDesde","eHasta","eOri","eInst","eVac"].forEach(function(id){$(id).addEventListener("change",pedirPrevia)});
+["eGal","ePer","eDesde","eHasta","eOri","eInst","eVac"].forEach(function(id){$(id).addEventListener("change",pedirPrevia)});
 $("eVista").addEventListener("change",function(){$("eOri").value=oriDef(this.value);visOpts();pedirPrevia()});
 $("eXlsx").addEventListener("click",function(){
   var x=prep();if(!x)return;var o=expOpts(),a=$("eDesde").value,b=$("eHasta").value,wb=XLSX.utils.book_new(),gs=galsDe(o.sel);
-  conOpts(o,function(){gs.forEach(function(gv){S.gal=gv;var bl=bloques(o.v,a,b),aoa=[[x.title+alcance(o.v,gv)],[]];
+  var usados={};function hoja(n){n=String(n).replace(/[\[\]:*?\/\\]/g," ").slice(0,28)||"Plan";var k=n,i=2;while(usados[k.toLowerCase()])k=n+" "+(i++);usados[k.toLowerCase()]=1;return k}
+  conOpts(o,function(){gs.forEach(function(gv){S.gal=gv;persDe(o,a,b).forEach(function(pn){XOPT.persona=pn;var bl=bloques(o.v,a,b);
+    if((o.sel==="each-s"||o.per==="each")&&!bl.some(function(b){return b.body.some(function(r){return r.slice(1).some(function(c){return String(c||"").trim()})})}))return;
+    var aoa=[[pn?"SILMAD - Tareas de "+pn+" - del "+dmy(a)+" al "+dmy(b):x.title+alcance(o.v,gv)],[]];
     bl.forEach(function(b){aoa.push(b.head);b.body.forEach(function(r){aoa.push(r)});aoa.push([])});
     var ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=(bl[0]?bl[0].head:[0]).map(function(_,i){return{wch:i===0&&o.v!=="inst"?22:34}});
-    XLSX.utils.book_append_sheet(wb,ws,gs.length>1?"Galpón "+gv:"Plan")})});
+    XLSX.utils.book_append_sheet(wb,ws,hoja(pn||(gv.indexOf("s:")===0?secNombre(gv.slice(2)):gs.length>1?"Galpón "+gv:"Plan")))});XOPT.persona=null})});
+  if(!wb.SheetNames.length){$("eErr").textContent="No hay tareas en ese período.";return}
   guardarPrefsExp(o);save(nombreArch(x,o)+".xlsx",XLSX.write(wb,{type:"array",bookType:"xlsx"}));
 });
 /* PDF dibujado a mano: una tarea por recuadro, con quien la hace primero. */
@@ -734,7 +751,7 @@ function pdfTablas(v,a,b){
       out.push({modo:per?"per":"prod",cols:days.map(function(d){return DN[d.getDay()]+" "+dm(d)+(fer.indexOf(iso(d))>=0?" ("+etiq(iso(d))+")":"")}),
         gris:keys.map(function(k){return fer.indexOf(k)>=0}),
         rows:(function(){var rr=rws.map(function(r){var L=lay(keys,S.tareas.filter(function(t){return r.pred(t)&&pasa(t)}));return{label:r.label,items:L.items,L:L.L}});
-          if(XOPT&&!XOPT.vac){rr=rr.filter(function(r){return r.items.length});if(!rr.length)rr=[{label:"Sin tareas",items:[],L:[]}]}return rr})()})})(all.slice(i,i+5))}
+          if(XOPT&&!XOPT.vac&&!XOPT.persona){rr=rr.filter(function(r){return r.items.length});if(!rr.length)rr=[{label:"Sin tareas",items:[],L:[]}]}return rr})()})})(all.slice(i,i+5))}
   }
   return out;
 }
@@ -749,11 +766,11 @@ function pdfLineas(doc,it,modo,w){
   if(t.hecho)add("TERMINADA","bold",7.5);
   return L;
 }
-function pdfDibujar(doc,tablas,titulo,nueva,PW,PH){
-  var M=8,W=PW-2*M,y=0;
+function pdfDibujar(doc,tablas,titulo,nueva,PW,PH,y0){
+  var M=8,W=PW-2*M,y=0,sig=!!y0&&y0<PH-60;
   function lh(sz){return sz*0.3528*1.2}
   function encabezado(T,primera){
-    if(primera){doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor(0);doc.text(titulo,M,12);y=16}else y=M;
+    if(primera){var tt=12;if(sig){doc.setLineDashPattern([2,1.5],0);doc.setDrawColor(120);doc.setLineWidth(.3);doc.line(M,y0+5,PW-M,y0+5);doc.setLineDashPattern([],0);tt=y0+13}doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor(0);doc.text(titulo,M,tt);y=tt+4}else y=M;
     var wl=T.modo==="inst"?0:(PW<250?25:30),cw=(W-wl)/T.cols.length;
     doc.setLineDashPattern([],0);doc.setDrawColor(70);doc.setLineWidth(.25);doc.setFont("helvetica","bold");doc.setFontSize(10);
     if(wl){doc.setFillColor(215);doc.rect(M,y,wl,7,"FD");doc.text(T.modo==="per"?"PERSONA":"SECTOR",M+1.5,y+4.8)}
@@ -761,8 +778,8 @@ function pdfDibujar(doc,tablas,titulo,nueva,PW,PH){
     y+=7;return{wl:wl,cw:cw};
   }
   tablas.forEach(function(T,ti){
-    if(ti>0||nueva)doc.addPage();
-    var g=encabezado(T,true),inst=T.modo==="inst",box=inst?0:4.4,top=inst?6.5:1.2;
+    if(ti>0||(nueva&&!sig))doc.addPage();
+    var g=encabezado(T,true);sig=false;var inst=T.modo==="inst",box=inst?0:4.4,top=inst?6.5:1.2;
     T.rows.forEach(function(R){
       var lanes=[];
       R.items.forEach(function(it){var w=(it.e-it.s+1)*g.cw-2-1.6-2.4-box;it.L=pdfLineas(doc,it,T.modo,w);it.h=it.L.reduce(function(a,l){return a+lh(l.sz)},0)+2.2;lanes[it.lane]=Math.max(lanes[it.lane]||0,it.h)});
@@ -787,6 +804,7 @@ function pdfDibujar(doc,tablas,titulo,nueva,PW,PH){
       y+=hh;
     });
   });
+  return y;
 }
 $("ePdf").addEventListener("click",function(){
   var x=prep();if(!x)return;var o=expOpts(),doc=nuevoPdf(o);generar(doc,o,$("eDesde").value,$("eHasta").value);
