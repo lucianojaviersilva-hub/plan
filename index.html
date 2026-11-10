@@ -85,6 +85,13 @@ h1{font-family:var(--f-head);font-size:22px;font-weight:600;margin:0;letter-spac
 .msg{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;margin-bottom:12px}
 dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);padding:18px;width:min(480px,calc(100vw - 32px))}
 dialog#cfg{width:min(720px,calc(100vw - 32px))}
+dialog#exp{width:min(1120px,calc(100vw - 32px))}
+.expw{display:grid;grid-template-columns:290px 1fr;gap:18px;align-items:start}
+@media (max-width:760px){.expw{grid-template-columns:1fr}}
+.prevh{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--muted);margin:0 0 6px}
+#ePrev{background:#d5dade;border-radius:8px;padding:10px;max-height:74vh;overflow:auto;min-height:120px}
+#ePrev canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3);margin:0 auto 12px}
+#ePrev canvas.vert{max-width:560px}
 dialog::backdrop{background:rgba(10,20,24,.55)}
 dialog h2{font-family:var(--f-head);font-size:18px;margin:0 0 12px}
 dialog h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:16px 0 6px}
@@ -109,6 +116,9 @@ dialog#cfg{padding-bottom:0}
 .frow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:4px 0}
 .frow .in{width:170px}
 .g.uno{min-width:0}
+.nt{flex:1 0 100%;font-size:12px;font-style:italic;line-height:1.3;opacity:.9;overflow-wrap:anywhere}
+.f .chk input{width:auto;flex:0 0 auto;margin:0}
+.f .chk{justify-content:flex-start}
 .hx{flex:0 0 auto;width:19px;height:19px;border:2px solid var(--fg);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;line-height:1;background:var(--surface);color:var(--surface)}
 .hx.on{background:var(--ok);border-color:var(--ok)}
 .chip.done .t{text-decoration:line-through;opacity:.65}
@@ -219,6 +229,9 @@ dialog#cfg{padding-bottom:0}
     <div class="sub">A la izquierda el sector, a la derecha quién trabaja ahí. Al completar un casillero aparece otro vacío. Si un sector tiene una sola persona, se asigna sola al cargar una tarea.</div>
     <div id="cRows"></div>
     <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" id="cAddS">Agregar sector</button></div>
+    <h3>Días de trabajo</h3>
+    <div class="f"><label class="chk"><input type="checkbox" id="cSab"> Se trabaja los sábados</label></div>
+    <div class="sub">Sin tildar, los sábados no aparecen en pantalla ni en lo que se imprime o exporta. Si hay una instalación cargada en sábado, la app avisa.</div>
     <h3>Cierres y vacaciones</h3>
     <div class="sub">Períodos en que la fábrica está cerrada. Esos días aparecen sombreados con el nombre que les pongas.</div>
     <div id="cCie"></div>
@@ -238,16 +251,25 @@ dialog#cfg{padding-bottom:0}
 
 <dialog id="exp">
   <form id="expF" method="dialog">
-    <h2>Exportar</h2>
+    <h2>Exportar e imprimir</h2>
+    <div class="expw">
+    <div>
     <div class="f"><label for="eVista">Qué exportar</label><select id="eVista"><option value="semana">Producción por sector</option><option value="inst">Instalaciones</option><option value="persona">Por persona</option></select></div>
+    <div class="f" id="eGalW"><label for="eGal">Qué sectores</label><select id="eGal"><option value="cur">Lo que estoy viendo ahora</option><option value="all">Todos los sectores</option><option value="1">Solo galpón 1</option><option value="2">Solo galpón 2</option><option value="12">Galpón 1 y galpón 2, cada uno en su hoja</option></select></div>
     <div class="two">
       <div class="f"><label for="eDesde">Desde</label><input id="eDesde" type="date"></div>
       <div class="f"><label for="eHasta">Hasta</label><input id="eHasta" type="date"></div>
     </div>
+    <div class="f"><label for="eOri">Hoja</label><select id="eOri"><option value="v">Vertical</option><option value="h">Horizontal</option></select></div>
+    <div class="f" id="eInstW"><label class="chk"><input type="checkbox" id="eInst"> Incluir instalaciones</label></div>
+    <div class="f" id="eVacW"><label class="chk"><input type="checkbox" id="eVac"> Mostrar filas sin tareas</label></div>
     <div class="sub" id="eNota"></div>
-    <div class="sub">El PDF sale en blanco y negro, apaisado, con letra grande para imprimir. Producción y personas van de a 5 días hábiles por tabla.</div>
+    <div class="sub">Sale en blanco y negro: cada tarea en su recuadro, con el nombre de quien la hace primero. Las opciones de hoja y filas se aplican al PDF; sectores e instalaciones, también al Excel.</div>
     <div class="err" id="eErr"></div>
-    <div class="acts"><button type="button" class="btn" id="eCan">Cancelar</button><button type="button" class="btn pri" id="eXlsx">Excel</button><button type="button" class="btn pri" id="ePdf">PDF</button></div>
+    </div>
+    <div id="ePrevW"><div class="prevh"><span>Vista previa</span><span id="ePrevN"></span></div><div id="ePrev"></div></div>
+    </div>
+    <div class="acts"><button type="button" class="btn" id="eCan">Cancelar</button><button type="button" class="btn" id="eXlsx">Excel</button><button type="button" class="btn" id="eImp">Imprimir</button><button type="button" class="btn pri" id="ePdf">Descargar PDF</button></div>
   </form>
 </dialog>
 
@@ -264,7 +286,6 @@ dialog#cfg{padding-bottom:0}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
 (function(){
 "use strict";
@@ -282,7 +303,8 @@ function parse(s){var a=String(s).split("-");return new Date(+a[0],+a[1]-1,+a[2]
 function addD(d,n){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()+n);return x}
 function monday(d){return addD(d,-((d.getDay()+6)%7))}
 function dm(d){return p2(d.getDate())+"/"+p2(d.getMonth()+1)}
-function habil(d){return d.getDay()!==0&&d.getDay()!==6}
+function sab(){return!!(S.cfg&&String(S.cfg.sabados||"")==="1")}
+function habil(d){return d.getDay()!==0&&(d.getDay()!==6||sab())}
 function norm(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim()}
 function slug(s){return norm(s).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"sector"}
 function sectores(){return S.cfg&&Array.isArray(S.cfg.sectores)&&S.cfg.sectores.length?S.cfg.sectores:DEF_SEC.map(function(n){return{id:slug(n),nombre:n,resp:""}})}
@@ -339,26 +361,30 @@ function chip(it,modo,col,row){
   if(modo==="lugar"){top='<span class="pill neu">'+esc(t.tipo==="inst"?(t.terc?"Inst. tercerizada":"Instalación"):secNombre(t.sector))+'</span>'}
   else{top=pills(t.quien)}
   return '<button class="chip'+(t.hecho?' done':'')+(ins&&!t.conf?' tent':'')+(it.pre?' pre':'')+(it.post?' post':'')+'" data-id="'+esc(t.id)+'" style="--c:'+h+';grid-column:'+(col+it.s)+' / span '+(it.e-it.s+1)+';grid-row:'+(row+it.lane)+'" title="'+esc(t.nota||"")+'">'+
-    box+'<span class="who">'+top+'</span><span class="t">'+(it.pre?'‹ ':'')+esc(t.trabajo)+(it.post?' ›':'')+'</span>'+st+'</button>';
+    box+'<span class="who">'+top+'</span><span class="t">'+(it.pre?'‹ ':'')+esc(t.trabajo)+(it.post?' ›':'')+'</span>'+st+(t.nota?'<span class="nt">'+esc(t.nota)+'</span>':'')+'</button>';
 }
 function addBtn(day,extra,g,sid){return!S.ready||!puede(g,sid)?"":'<button class="add" data-add="'+day+'" '+(extra||"")+' aria-label="Agregar tarea el '+day+'">+</button>'}
 function cell(cls,col,row,span,inner){return'<div class="'+cls+'" style="grid-column:'+col+';grid-row:'+row+(span>1?' / span '+span:'')+'">'+(inner||"")+'</div>'}
 
 function nD(){return S.view==="dia"?1:5}
 function dias5(){var d=new Date(S.anchor.getFullYear(),S.anchor.getMonth(),S.anchor.getDate()),a=[],n=nD();while(a.length<n){if(habil(d))a.push(d);d=addD(d,1)}return a}
-function semanas4(){var m=monday(S.anchor),w=[];for(var i=0;i<4;i++){var r=[];for(var j=0;j<6;j++)r.push(addD(m,i*7+j));w.push(r)}return w}
+function sabOcultos(tipo,a,b){if(sab())return 0;var d=parse(a),e=parse(b),n={};
+  while(d<=e){if(d.getDay()===6){var k=iso(d);S.tareas.forEach(function(t){if(t.tipo===tipo&&pasaCli(t)&&t.desde<=k&&(t.hasta||t.desde)>=k){var f=parse(t.desde),h=parse(t.hasta||t.desde),otro=false;while(f<=h){if(f.getDay()!==6&&f.getDay()!==0){otro=true;break}f=addD(f,1)}if(!otro)n[t.id]=1}})}d=addD(d,1)}
+  return Object.keys(n).length}
+function semanas4(){var m=monday(S.anchor),w=[];for(var i=0;i<4;i++){var r=[];for(var j=0;j<(sab()?6:5);j++)r.push(addD(m,i*7+j));w.push(r)}return w}
 function rowsSemana(){
   var secs=sectores(),ids=secs.map(function(s){return s.id});
   var rows=[{label:"Instalación",g:gInst(),sid:"inst",cls:"inst",pred:function(t){return t.tipo==="inst"&&!t.terc},add:'data-tipo="inst"'},
     {label:"Instalación tercerizada",g:gInst(),sid:"inst",cls:"inst",pred:function(t){return t.tipo==="inst"&&!!t.terc},add:'data-tipo="inst" data-terc="1"'}];
   secs.forEach(function(s){rows.push({label:s.nombre,g:String(s.g||""),sid:s.id,pred:function(t){return t.tipo==="prod"&&t.sector===s.id},add:'data-tipo="prod" data-sec="'+esc(s.id)+'"'})});
   if(S.tareas.some(function(t){return t.tipo==="prod"&&ids.indexOf(t.sector)<0}))rows.push({label:"Sin sector",g:"",sid:"",pred:function(t){return t.tipo==="prod"&&ids.indexOf(t.sector)<0},add:'data-tipo="prod"'});
-  return rows.filter(function(r){return enGal(r.g,r.sid)});
+  return rows.filter(function(r){return enGal(r.g,r.sid)&&!(XOPT&&!XOPT.inst&&r.sid==="inst")});
 }
+var XOPT=null;
 function rowsPersona(days){
   var list=PL.slice();
   S.tareas.forEach(function(t){if(days.some(function(d){return on(d,t)}))list=list.concat(nombres(t.quien))});
-  var rows=uniq(list).map(function(n){var k=norm(n);return{label:n,persona:true,pred:function(t){return nombres(t.quien).some(function(x){return norm(x)===k})}}});
+  var rows=uniq(list).map(function(n){var k=norm(n);return{label:n,persona:true,pred:function(t){return!(XOPT&&!XOPT.inst&&t.tipo==="inst")&&nombres(t.quien).some(function(x){return norm(x)===k})}}});
   if(S.tareas.some(function(t){return!nombres(t.quien).length&&days.some(function(d){return on(d,t)})}))rows.push({label:"Sin asignar",sub:"falta responsable",pred:function(t){return!nombres(t.quien).length}});
   return rows;
 }
@@ -385,8 +411,8 @@ function renderSemana(persona){
 }
 function renderInst(){
   var hoy=iso(new Date()),fer=feriados(),ws=semanas4(),g=$("grid");
-  g.classList.remove("uno");g.style.gridTemplateColumns="repeat(6,minmax(0,1fr))";
-  var h="",r=2;for(var i=1;i<=6;i++)h+=cell("hd",i,1,1,DN[i]);
+  g.classList.remove("uno");var nd=ws[0].length;g.style.gridTemplateColumns="repeat("+nd+",minmax(0,1fr))";
+  var h="",r=2;for(var i=1;i<=nd;i++)h+=cell("hd",i,1,1,DN[i]);
   ws.forEach(function(w){
     var keys=w.map(iso),L=lay(keys,S.tareas.filter(function(t){return t.tipo==="inst"&&pasaCli(t)})),n=1+Math.max(L.L,1)+1;
     w.forEach(function(d,i){var k=keys[i];
@@ -397,8 +423,8 @@ function renderInst(){
     r+=n;
   });
   g.innerHTML=h;
-  var a=ws[0][0],b=ws[3][5];
-  $("period").textContent="Instalaciones, "+dm(a)+" al "+dm(b)+"/"+b.getFullYear();
+  var a=ws[0][0],b=ws[3][nd-1],ocu=sabOcultos("inst",iso(a),iso(addD(ws[3][0],6)));
+  $("period").textContent="Instalaciones, "+dm(a)+" al "+dm(b)+"/"+b.getFullYear()+(ocu?" · ⚠ "+ocu+(ocu===1?" instalación en sábado no se ve":" instalaciones en sábado no se ven"):"");
   $("note").textContent="Solo instalaciones, 4 semanas desde la semana actual. El color es del cliente; las fechas sin confirmar aparecen con borde punteado y la palabra Tentativa. Para mandarle la captura a un cliente, elegilo en el filtro: la hoja queda solo con sus fechas.";
 }
 function render(){
@@ -520,7 +546,7 @@ $("bCfg").addEventListener("click",function(){
   $("cCie").innerHTML=cierres().map(ciRow).join("")||'<div class="sub">No hay cierres cargados.</div>';
   $("cFer").innerHTML=ferRaw().map(function(k){return fRow(k,true)}).join("")||'<div class="sub">No hay feriados cargados.</div>';
   $("dlGente").innerHTML=PL.map(function(n){return'<option value="'+esc(n)+'">'}).join("");
-  $("cErr").textContent="";$("cfg").showModal();
+  $("cSab").checked=sab();$("cErr").textContent="";$("cfg").showModal();
 });
 $("cRows").addEventListener("input",function(e){if(!e.target.classList.contains("nm"))return;var box=e.target.parentNode,last=box.lastElementChild;if(last.value.trim())box.insertAdjacentHTML("beforeend",nmBox(""))});
 $("cRows").addEventListener("focusout",function(e){if(!e.target.classList.contains("nm"))return;var box=e.target.parentNode;
@@ -576,14 +602,14 @@ $("cfgF").addEventListener("submit",function(e){
   if(!badU&&!adm)badU="Tiene que quedar al menos un usuario que administre.";
   if(!badU&&!mio)badU="No podés quitarte ni cambiarte el nombre a vos mismo desde acá.";
   if(badU){tabCfg("Usuarios");$("cErr").textContent=badU;return}
-  api("config",{sectores:secs,instaladores:inst,terceros:terc,personas:otr,feriados:fer,cierres:cie,galponInst:galI,clientes:cls,usuarios:usr,mio:mio}).then(function(){CODE=mio;try{localStorage.setItem("pl-cod",CODE)}catch(e){}$("cfg").close();toast("Configuración guardada")},
+  api("config",{sectores:secs,instaladores:inst,terceros:terc,personas:otr,feriados:fer,cierres:cie,galponInst:galI,sabados:$("cSab").checked?"1":"",clientes:cls,usuarios:usr,mio:mio}).then(function(){CODE=mio;try{localStorage.setItem("pl-cod",CODE)}catch(e){}$("cfg").close();toast("Configuración guardada")},
     function(er){$("cErr").textContent=(er&&er.message)||"No se pudo guardar. Probá de nuevo."});
 });
 
 var TABC="Clientes";
 function tabCfg(k){TABC=k;Array.prototype.slice.call($("cfgF").querySelectorAll(".tabp")).forEach(function(x){x.hidden=x.dataset.tab!==k});
   Array.prototype.slice.call($("cTabs").children).forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.t===k))})}
-(function(){var f=$("cfgF"),map={"Clientes":"Clientes","Sectores y personas":"Sectores","Cierres y vacaciones":"Calendario","Feriados":"Calendario","Usuarios":"Usuarios"},secs={},orden=[],cur=null;
+(function(){var f=$("cfgF"),map={"Clientes":"Clientes","Sectores y personas":"Sectores","Días de trabajo":"Calendario","Cierres y vacaciones":"Calendario","Feriados":"Calendario","Usuarios":"Usuarios"},secs={},orden=[],cur=null;
   Array.prototype.slice.call(f.children).forEach(function(el){
     if(el.tagName==="H3"){var k=map[el.textContent.trim()]||el.textContent.trim();if(!secs[k]){secs[k]=document.createElement("div");secs[k].className="tabp";secs[k].dataset.tab=k;f.insertBefore(secs[k],el);orden.push(k)}cur=secs[k];if(k!=="Calendario")el.hidden=true}
     if(cur&&el.tagName!=="DATALIST"&&el.className!=="foot")cur.appendChild(el)});
@@ -605,7 +631,7 @@ $("bHoy").addEventListener("click",function(){S.anchor=new Date();render()});
 $("filtro").addEventListener("change",function(){S.cli=this.value;render()});
 
 /* ---------- exportar ---------- */
-function txt(t,pref){return(pref?pref+": ":"")+t.trabajo+" ("+(nombres(t.quien).join(", ")||"sin asignar")+")"+(t.tipo==="inst"?(t.conf?" [confirmada]":" [tentativa]")+(t.terc?" [tercerizada]":""):"")+(t.hecho?" [terminada]":"")}
+function txt(t,pref){var p=partes(t);return(pref?pref+": ":"")+(nombres(t.quien).join(", ").toUpperCase()||"SIN ASIGNAR")+" | "+p.c+(p.r?" - "+p.r:"")+(t.nota?" | "+t.nota:"")+(t.tipo==="inst"?(t.conf?" [confirmada]":" [tentativa]")+(t.terc?" [tercerizada]":""):"")+(t.hecho?" [terminada]":"")}
 function dmy(k){var d=parse(k);return dm(d)+"/"+d.getFullYear()}
 function habiles(a,b){var o=[],d=parse(a),e=parse(b);while(d<=e){if(habil(d))o.push(d);d=addD(d,1)}return o}
 function celda(k,pred,pref,f){f=f||pasa;return S.tareas.filter(function(t){return on(k,t)&&pred(t)&&f(t)}).sort(sortT).map(function(t){return txt(t,pref?(t.tipo==="inst"?(t.terc?"Inst. tercerizada":"Instalación"):secNombre(t.sector)):"")}).join("\n")}
@@ -624,11 +650,12 @@ function bloques(vista,a,b){
   return out;
 }
 $("bExp").addEventListener("click",function(){
-  var a,b;if(S.view==="inst"){var w=semanas4();a=w[0][0];b=w[3][5]}else{var d=dias5();a=d[0];b=d[d.length-1]}
+  var a,b;if(S.view==="inst"){var w=semanas4();a=w[0][0];b=w[3][w[3].length-1]}else{var d=dias5();a=d[0];b=d[d.length-1]}
   $("eVista").value=S.view==="dia"?"semana":S.view;$("eDesde").value=iso(a);$("eHasta").value=iso(b);$("eErr").textContent="";
   var f=$("filtro");$("eNota").textContent=S.cli?"Se exporta solo el cliente filtrado: "+f.options[f.selectedIndex].text+".":"Se exportan todos los clientes. Para exportar uno solo, elegilo antes en el filtro de clientes.";
-  $("eXlsx").hidden=!window.XLSX;$("ePdf").hidden=!(window.jspdf&&window.jspdf.jsPDF&&window.jspdf.jsPDF.API&&window.jspdf.jsPDF.API.autoTable);
-  $("exp").showModal();
+  $("eXlsx").hidden=!window.XLSX;$("ePdf").hidden=!(window.jspdf&&window.jspdf.jsPDF);$("eGal").value="cur";$("eImp").hidden=$("ePdf").hidden;
+  var pe=prefsExp();$("eOri").value=oriDef($("eVista").value);$("eInst").checked=pe.inst!==false;$("eVac").checked=!!pe.vac;visOpts();
+  $("exp").showModal();previa();
 });
 $("eCan").addEventListener("click",function(){$("exp").close()});
 function prep(){
@@ -641,26 +668,134 @@ function prep(){
   return{v:v,bl:bl,title:"SILMAD - "+nom+" del "+dmy(a)+" al "+dmy(b)+(S.cli?" - "+f.options[f.selectedIndex].text:""),file:slug(nom)+"-"+a+"-a-"+b+(S.cli?"-"+slug(S.cli):"")};
 }
 function save(name,data){$("exp").close();try{var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data]));a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.parentNode.removeChild(a)},3000);toast("Archivo descargado")}catch(e){toast("No se pudo exportar desde este dispositivo.")}}
+function expOpts(){var v=$("eVista").value;return{v:v,ori:$("eOri").value,inst:$("eInst").checked,vac:$("eVac").checked,sel:v==="inst"?"cur":$("eGal").value}}
+function galsDe(sel){return sel==="all"?[""]:sel==="1"?["1"]:sel==="2"?["2"]:sel==="12"?["1","2"]:[S.gal]}
+function alcance(v,gv){return v==="inst"||!gv?"":gv.indexOf("s:")===0?" - "+(gv==="s:inst"?"Instalación":secNombre(gv.slice(2))):" - Galpón "+gv}
+function conOpts(o,fn){var prev=S.gal,px=XOPT;XOPT=o;try{return fn()}finally{S.gal=prev;XOPT=px}}
+function prefsExp(){try{return JSON.parse(localStorage.getItem("pl-exp")||"{}")||{}}catch(e){return{}}}
+function guardarPrefsExp(o){var p=prefsExp();p.ori=p.ori||{};p.ori[o.v]=o.ori;if(o.v!=="inst"){p.inst=o.inst;p.vac=o.vac}try{localStorage.setItem("pl-exp",JSON.stringify(p))}catch(e){}}
+function oriDef(v){var p=prefsExp();return p.ori&&p.ori[v]||(v==="inst"?"h":"v")}
+function visOpts(){var i=$("eVista").value==="inst";$("eGalW").hidden=i;$("eInstW").hidden=i;$("eVacW").hidden=i}
+function dims(o){return o.ori==="h"?[297,210]:[210,297]}
+function nuevoPdf(o){return new window.jspdf.jsPDF({orientation:o.ori==="h"?"landscape":"portrait",unit:"mm",format:"a4"})}
+function generar(doc,o,a,b){
+  var d=dims(o),f=$("filtro"),nom={semana:"Producción",inst:"Instalaciones",persona:"Por persona"}[o.v],n=0;
+  conOpts(o,function(){galsDe(o.sel).forEach(function(gv){S.gal=gv;
+    pdfDibujar(doc,pdfTablas(o.v,a,b),"SILMAD - "+nom+alcance(o.v,gv)+" - del "+dmy(a)+" al "+dmy(b)+(S.cli?" - "+f.options[f.selectedIndex].text:""),n>0,d[0],d[1]);n++})});
+}
+function nombreArch(x,o){return x.file+(o.sel==="cur"||o.v==="inst"?"":"-galpon-"+o.sel)}
+/* Vista previa: dibuja lo mismo que el PDF sobre <canvas>; mide el texto con jsPDF para que corte las líneas igual. */
+function Lienzo(W,H,cont,ref){this.W=W;this.H=H;this.cont=cont;this.ref=ref;this.K=3*Math.min(2,window.devicePixelRatio||1);this.n=0;this.st={f:"normal",sz:10,tc:0,dc:0,fc:0,lw:.2,dash:[]};this.addPage()}
+Lienzo.prototype={
+  addPage:function(){var c=document.createElement("canvas");c.width=Math.round(this.W*this.K);c.height=Math.round(this.H*this.K);if(this.W<this.H)c.className="vert";this.cont.appendChild(c);this.c=c.getContext("2d");this.c.fillStyle="#fff";this.c.fillRect(0,0,c.width,c.height);this.n++;return this},
+  gris:function(v){return"rgb("+v+","+v+","+v+")"},
+  setFont:function(f,st){this.st.f=st||"normal";this.ref.setFont(f,st);return this},
+  setFontSize:function(z){this.st.sz=z;this.ref.setFontSize(z);return this},
+  setTextColor:function(v){this.st.tc=v;return this},setDrawColor:function(v){this.st.dc=v;return this},setFillColor:function(v){this.st.fc=v;return this},
+  setLineWidth:function(w){this.st.lw=w;return this},setLineDashPattern:function(a){this.st.dash=a||[];return this},
+  splitTextToSize:function(t,w){return this.ref.splitTextToSize(t,w)},getTextWidth:function(t){return this.ref.getTextWidth(t)},
+  trazo:function(){var c=this.c,K=this.K;c.strokeStyle=this.gris(this.st.dc);c.lineWidth=Math.max(1,this.st.lw*K);c.setLineDash(this.st.dash.map(function(x){return x*K}))},
+  rect:function(x,y,w,h,m){var c=this.c,K=this.K;m=m||"S";if(m.indexOf("F")>=0){c.fillStyle=this.gris(this.st.fc);c.fillRect(x*K,y*K,w*K,h*K)}if(m==="S"||m.indexOf("D")>=0){this.trazo();c.strokeRect(x*K,y*K,w*K,h*K)}return this},
+  line:function(a,b,x,y){var c=this.c,K=this.K;this.trazo();c.beginPath();c.moveTo(a*K,b*K);c.lineTo(x*K,y*K);c.stroke();return this},
+  text:function(t,x,y){var c=this.c,K=this.K,st=this.st.f,pt=this.st.sz*0.3528;c.setLineDash([]);c.fillStyle=this.gris(this.st.tc);
+    c.font=(st.indexOf("italic")>=0?"italic ":"")+(st.indexOf("bold")>=0?"bold ":"")+(pt*K).toFixed(2)+"px Helvetica, Arial, sans-serif";
+    (Array.isArray(t)?t:[t]).forEach(function(l,i){c.fillText(String(l),x*K,(y+i*pt*1.15)*K)});return this}
+};
+function previa(){
+  var box=$("ePrev");box.innerHTML="";$("ePrevN").textContent="";
+  if(!(window.jspdf&&window.jspdf.jsPDF)){$("ePrevW").hidden=true;return}
+  $("ePrevW").hidden=false;$("eErr").textContent="";var x=prep();if(!x)return;
+  var o=expOpts(),d=dims(o);
+  try{var L=new Lienzo(d[0],d[1],box,nuevoPdf(o));generar(L,o,$("eDesde").value,$("eHasta").value);$("ePrevN").textContent=L.n===1?"1 hoja":L.n+" hojas"}
+  catch(e){box.textContent="No se pudo armar la vista previa."}
+}
+var tPrev=0;function pedirPrevia(){clearTimeout(tPrev);tPrev=setTimeout(previa,150)}
+["eGal","eDesde","eHasta","eOri","eInst","eVac"].forEach(function(id){$(id).addEventListener("change",pedirPrevia)});
+$("eVista").addEventListener("change",function(){$("eOri").value=oriDef(this.value);visOpts();pedirPrevia()});
 $("eXlsx").addEventListener("click",function(){
-  var x=prep();if(!x)return;var aoa=[[x.title],[]];
-  x.bl.forEach(function(b){aoa.push(b.head);b.body.forEach(function(r){aoa.push(r)});aoa.push([])});
-  var ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=x.bl[0].head.map(function(_,i){return{wch:i===0&&x.v!=="inst"?22:34}});
-  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Plan");
-  save(x.file+".xlsx",XLSX.write(wb,{type:"array",bookType:"xlsx"}));
+  var x=prep();if(!x)return;var o=expOpts(),a=$("eDesde").value,b=$("eHasta").value,wb=XLSX.utils.book_new(),gs=galsDe(o.sel);
+  conOpts(o,function(){gs.forEach(function(gv){S.gal=gv;var bl=bloques(o.v,a,b),aoa=[[x.title+alcance(o.v,gv)],[]];
+    bl.forEach(function(b){aoa.push(b.head);b.body.forEach(function(r){aoa.push(r)});aoa.push([])});
+    var ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=(bl[0]?bl[0].head:[0]).map(function(_,i){return{wch:i===0&&o.v!=="inst"?22:34}});
+    XLSX.utils.book_append_sheet(wb,ws,gs.length>1?"Galpón "+gv:"Plan")})});
+  guardarPrefsExp(o);save(nombreArch(x,o)+".xlsx",XLSX.write(wb,{type:"array",bookType:"xlsx"}));
 });
-$("ePdf").addEventListener("click",function(){
-  var x=prep();if(!x)return;var ins=x.v==="inst",doc=new window.jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"}),y=18;
-  doc.setFontSize(14);doc.setTextColor(0);doc.text(x.title,10,12);
-  x.bl.forEach(function(b){
-    if(y>150){doc.addPage();y=12}
-    doc.autoTable({head:[b.head],body:b.body,startY:y,margin:{left:10,right:10,top:12,bottom:10},theme:"grid",rowPageBreak:"avoid",
-      styles:{fontSize:ins?10:10.5,cellPadding:1.8,overflow:"linebreak",valign:"top",textColor:0,lineColor:80,lineWidth:.2},
-      headStyles:{fillColor:[212,212,212],textColor:0,fontStyle:"bold"},
-      bodyStyles:ins?{minCellHeight:30}:{},
-      columnStyles:ins?{}:{0:{cellWidth:34,fontStyle:"bold",fillColor:[236,236,236]}}});
-    y=doc.lastAutoTable.finalY+8;
+/* PDF dibujado a mano: una tarea por recuadro, con quien la hace primero. */
+function pdfTablas(v,a,b){
+  var out=[],fer=feriados();
+  if(v==="inst"){
+    var m=monday(parse(a)),e=parse(b),rows=[],ts=S.tareas.filter(function(t){return t.tipo==="inst"&&pasaCli(t)&&(t.hasta||t.desde)>=a&&t.desde<=b});
+    while(m<=e){var days=[];for(var j=0;j<(sab()?6:5);j++)days.push(addD(m,j));var keys=days.map(iso),L=lay(keys,ts);
+      rows.push({fechas:days.map(function(d){var k=iso(d);return dm(d)+(fer.indexOf(k)>=0?"  "+etiq(k).toUpperCase():"")}),gris:keys.map(function(k){return fer.indexOf(k)>=0||k<a||k>b}),items:L.items,L:L.L});m=addD(m,7)}
+    out.push({modo:"inst",cols:[1,2,3,4,5,6].slice(0,sab()?6:5).map(function(i){return DN[i]}),rows:rows});
+  }else{
+    var per=v==="persona",all=habiles(a,b),rws=per?rowsPersona(all.map(iso)):rowsSemana();
+    for(var i=0;i<all.length;i+=5){(function(days){var keys=days.map(iso);
+      out.push({modo:per?"per":"prod",cols:days.map(function(d){return DN[d.getDay()]+" "+dm(d)+(fer.indexOf(iso(d))>=0?" ("+etiq(iso(d))+")":"")}),
+        gris:keys.map(function(k){return fer.indexOf(k)>=0}),
+        rows:(function(){var rr=rws.map(function(r){var L=lay(keys,S.tareas.filter(function(t){return r.pred(t)&&pasa(t)}));return{label:r.label,items:L.items,L:L.L}});
+          if(XOPT&&!XOPT.vac){rr=rr.filter(function(r){return r.items.length});if(!rr.length)rr=[{label:"Sin tareas",items:[],L:[]}]}return rr})()})})(all.slice(i,i+5))}
+  }
+  return out;
+}
+function pdfLineas(doc,it,modo,w){
+  var t=it.t,L=[],p=partes(t),q=nombres(t.quien).join(", ").toUpperCase()||"SIN ASIGNAR",cp=(it.pre?"< ":"")+p.c+(p.r?" - "+p.r:"")+(it.post?" >":"");
+  function add(x,st,sz){doc.setFont("helvetica",st);doc.setFontSize(sz);doc.splitTextToSize(String(x),w).forEach(function(l){L.push({x:l,st:st,sz:sz})})}
+  if(modo==="per")add(t.tipo==="inst"?(t.terc?"INST. TERCERIZADA":"INSTALACIÓN"):secNombre(t.sector).toUpperCase(),"bold",10);
+  if(modo==="inst"){add(cp,"bold",10);add(q,"normal",9.5)}
+  else{if(modo!=="per")add(q,"bold",10.5);add(cp,"normal",9.5)}
+  if(t.nota)add(t.nota,"italic",9);
+  if(t.tipo==="inst")add((t.conf?"CONFIRMADA":"TENTATIVA")+(t.terc?" - TERCERIZADA":""),"bold",7.5);
+  if(t.hecho)add("TERMINADA","bold",7.5);
+  return L;
+}
+function pdfDibujar(doc,tablas,titulo,nueva,PW,PH){
+  var M=8,W=PW-2*M,y=0;
+  function lh(sz){return sz*0.3528*1.2}
+  function encabezado(T,primera){
+    if(primera){doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor(0);doc.text(titulo,M,12);y=16}else y=M;
+    var wl=T.modo==="inst"?0:(PW<250?25:30),cw=(W-wl)/T.cols.length;
+    doc.setLineDashPattern([],0);doc.setDrawColor(70);doc.setLineWidth(.25);doc.setFont("helvetica","bold");doc.setFontSize(10);
+    if(wl){doc.setFillColor(215);doc.rect(M,y,wl,7,"FD");doc.text(T.modo==="per"?"PERSONA":"SECTOR",M+1.5,y+4.8)}
+    T.cols.forEach(function(c,i){doc.setFillColor(215);doc.rect(M+wl+i*cw,y,cw,7,"FD");doc.text(String(c).toUpperCase(),M+wl+i*cw+1.5,y+4.8)});
+    y+=7;return{wl:wl,cw:cw};
+  }
+  tablas.forEach(function(T,ti){
+    if(ti>0||nueva)doc.addPage();
+    var g=encabezado(T,true),inst=T.modo==="inst",box=inst?0:4.4,top=inst?6.5:1.2;
+    T.rows.forEach(function(R){
+      var lanes=[];
+      R.items.forEach(function(it){var w=(it.e-it.s+1)*g.cw-2-1.6-2.4-box;it.L=pdfLineas(doc,it,T.modo,w);it.h=it.L.reduce(function(a,l){return a+lh(l.sz)},0)+2.2;lanes[it.lane]=Math.max(lanes[it.lane]||0,it.h)});
+      var hh=top+lanes.reduce(function(a,x){return a+x+1.2},0)+.6,minH=inst?22:9.5;
+      if(g.wl){var lt=String(R.label).toUpperCase(),lz=10;doc.setFont("helvetica","bold");while(lz>7&&lt.split(/\s+/).some(function(w){doc.setFontSize(lz);return doc.getTextWidth(w)>g.wl-3}))lz-=.5;doc.setFontSize(lz);var lab=doc.splitTextToSize(lt,g.wl-3);minH=Math.max(minH,lab.length*lh(lz)+3)}
+      hh=Math.max(hh,minH);
+      if(y+hh>PH-M&&y>30){doc.addPage();g=encabezado(T,false)}
+      doc.setLineDashPattern([],0);doc.setDrawColor(70);doc.setLineWidth(.25);doc.setTextColor(0);
+      if(g.wl){doc.setFillColor(236);doc.rect(M,y,g.wl,hh,"FD");doc.setFont("helvetica","bold");doc.setFontSize(lz);doc.text(lab,M+1.5,y+4.6)}
+      T.cols.forEach(function(c,i){var gr=(R.gris||T.gris||[])[i];if(gr){doc.setFillColor(238);doc.rect(M+g.wl+i*g.cw,y,g.cw,hh,"FD")}else doc.rect(M+g.wl+i*g.cw,y,g.cw,hh,"S");
+        if(inst){doc.setFont("helvetica","bold");doc.setFontSize(9.5);doc.text(R.fechas[i],M+g.wl+i*g.cw+1.5,y+4.4)}});
+      var ly=y+top,off=[];lanes.forEach(function(x,i){off[i]=ly;ly+=x+1.2});
+      R.items.forEach(function(it){
+        var bx=M+g.wl+it.s*g.cw+1,bw=(it.e-it.s+1)*g.cw-2,by=off[it.lane],bh=it.h,t=it.t;
+        doc.setFillColor(255);doc.setDrawColor(40);doc.setLineWidth(.3);
+        if(t.tipo==="inst"&&!t.conf)doc.setLineDashPattern([1.4,1],0);else doc.setLineDashPattern([],0);
+        doc.rect(bx,by,bw,bh,"FD");doc.setLineDashPattern([],0);
+        doc.setFillColor(t.tipo==="inst"&&!t.conf?150:0);doc.rect(bx,by,1.6,bh,"F");
+        if(box){doc.setLineWidth(.35);doc.rect(bx+2.6,by+1.3,3,3,"S");if(t.hecho){doc.line(bx+2.6,by+1.3,bx+5.6,by+4.3);doc.line(bx+5.6,by+1.3,bx+2.6,by+4.3)}}
+        var ty=by+1.1;it.L.forEach(function(l){doc.setFont("helvetica",l.st);doc.setFontSize(l.sz);ty+=lh(l.sz);doc.text(l.x,bx+1.6+1.4+box,ty-lh(l.sz)*.24)});
+      });
+      y+=hh;
+    });
   });
-  save(x.file+".pdf",doc.output("arraybuffer"));
+}
+$("ePdf").addEventListener("click",function(){
+  var x=prep();if(!x)return;var o=expOpts(),doc=nuevoPdf(o);generar(doc,o,$("eDesde").value,$("eHasta").value);
+  guardarPrefsExp(o);save(nombreArch(x,o)+".pdf",doc.output("arraybuffer"));
+});
+$("eImp").addEventListener("click",function(){
+  var x=prep();if(!x)return;var o=expOpts(),doc=nuevoPdf(o);generar(doc,o,$("eDesde").value,$("eHasta").value);guardarPrefsExp(o);
+  doc.autoPrint();var w=null;try{w=window.open(doc.output("bloburl"),"_blank")}catch(e){}
+  if(w)$("exp").close();else toast("El navegador bloqueó la ventana. Usá Descargar PDF e imprimilo desde ahí.");
 });
 
 /* ---------- datos ---------- */
